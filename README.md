@@ -44,7 +44,7 @@ Rising U.S. concentration is well-documented:
 
 ---
 
-## This Paper
+## This Project
 
 > Treat firm-industry allocation as a **latent variable**, identify it from Compustat NAICS co-occurrence, and propagate posterior uncertainty into concentration measures.
 
