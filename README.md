@@ -3,7 +3,7 @@
 # Bayesian Market Concentration for Multi-Sector Firms
 ### Evidence from U.S. Public Firms, 2017–2025
 
-**Zifan Huang** · Chicago Booth · April 29, 2026
+**Dhruvi Gandhi, Josephene Ginting, Zifan Huang, Zach Laurence, Skylar Liu** 
 
 [📄 Slide Deck (PDF)](slides/wrds_slides_submission.pdf) &nbsp;·&nbsp; [💻 Analysis Notebook](code/notebooks/05_wrds_analysis.ipynb) &nbsp;·&nbsp; [🛠 Source Code](code/src/)
 
