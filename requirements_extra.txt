@@ -1,0 +1,5 @@
+# Additional packages not in bayesian_ml_basic_env.yaml.
+# Add each entry with: package==version  # rationale, date added
+
+pytest  # test runner; not in course env; installed via conda, 2026-04-18
+wrds==3.4.0  # WRDS Python API for Compustat/WRDS exploration notebooks, installed via conda, 2026-04-28

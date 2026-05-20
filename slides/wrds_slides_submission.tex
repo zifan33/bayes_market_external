@@ -34,9 +34,9 @@
 
 \title{Bayesian Market Concentration for Multi-Sector Firms}
 %\subtitle{Evidence from U.S.\ Public Firms, 2017--2025}
-\author{Zifan Huang}
-\date{April 29, 2026}
-\institute{Chicago Booth}
+\author{Dhruvi Gandhi, Josephene Ginting, Zifan Huang, Zach Laurence, Skylar Liu}
+\date{\today}
+\institute{University of Chicago}
 
 \begin{document}
 
@@ -67,7 +67,7 @@
   All of this gets one NAICS code. Which market is Amazon in?
 
   \vfill
-  \textbf{When the code changes, HHI jumps---not because competition changed.}
+  \textbf{HHI jumps when the NAICS code changes, not because competition changed.}
 
 \end{frame}
 
@@ -98,7 +98,7 @@
 \begin{frame}{This Paper}
 
   \begin{itemize}
-    \item Treat firm-industry allocation as a latent variable, identify it from Compustat NAICS co-occurrence, and propagate posterior uncertainty into concentration measures.
+    \item Treat firm-industry allocation as a latent variable, identify it from Compustat NAICS co-occurrence and TNIC3 cosine similarities with competitors. Then, propagate posterior uncertainty into concentration measures.
   \end{itemize}
 
   \vspace{1.5em}
@@ -150,30 +150,78 @@
 
 \end{frame}
 
+\begin{frame}{Data: TNIC data}
+
+  \textbf{Source:} Hoberg-Phillips 10-K Text-based Network Industry Classifications (TNIC) data, 2017--2025
+
+  \vspace{0.8em}
+
+  \begin{columns}[T]
+    \begin{column}{1\textwidth}
+      \textbf{TNIC count panel}
+      \begin{itemize}
+        \item Product-description cosine similarity
+        \item 34{,}758 segment-industry-year rows
+        \item 93 unique NAICS codes
+        \item Counts $\to$ Dirichlet prior $\alpha_0$
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+\end{frame}
+
 % ================================================
 % MODEL
 % ================================================
 
-\begin{frame}{Model: Bayesian Dirichlet Allocation}
+\begin{frame}{Model: Two-Channel Dirichlet Prior}
 
-  \small\textit{Indices: $f$ = firm, $s$ = segment $\in f$, $k$ = industry, $t$ = year, $r$ = draw}
+  \small\textit{Indices: $f$ = firm, $s$ = segment $\in f$, $k$ = industry, $t$ = year, $j$ = TNIC peer}
 
   \vspace{0.4em}
 
-  \textbf{Prior} Sales-weighted pseudo-counts (summed over pre-period $\mathcal{T}_0 = 2017$--$2021$):
+  \textbf{Channel A: WRDS sales-weighted counts} (summed over pre-period $\mathcal{T}_0 = 2017$--$2021$):
   \[
-    \alpha_{fs,k}^{(0)} = \sum_{t\in\mathcal{T}_0}
-      \underbrace{\frac{c_{fs,k,t}}{C_{k,t}} \cdot S_{k,t}}_{w_{fs,k,t}:\;\text{segment's share of industry }k\text{'s count} \times \text{industry sales}} + \;\varepsilon
+    m_{fs,k}^{(0)} = \sum_{t\in\mathcal{T}_0}
+      \underbrace{\frac{c_{fs,k,t}}{C_{k,t}} \cdot S_{k,t}}_{w_{fs,k,t}:\;\text{segment's share of industry }k\text{'s count} \times \text{industry sales}}
   \]
+
+  \textbf{Channel B: TNIC peer-weighted smoothing} (Hoberg–Phillips 10-K cosine similarity):
+  \[
+    \mathrm{tnic\_share}_{f,k,t} \;=\;
+      \frac{\sum_{j} \mathrm{sim}(f,j,t)\,\hat\pi^{\text{bench}}_{j,k,t}}{\sum_{j} \mathrm{sim}(f,j,t)}
+    \qquad \text{(uniform } 1/K \text{ fallback if no peers)}
+  \]
+  \textit{Peers' benchmark industry shares, weighted by product-description similarity.}
+
+  \vspace{0.3em}
+
+  \textbf{Combined additive prior} with TNIC mass scaled to match the segment's pre-COVID total $M_{fs} = \sum_k m_{fs,k}^{(0)}$:
+  \[
+    \alpha_{fs,k,t}^{(0)} = m_{fs,k}^{(0)} \;+\; c_{\text{tnic}}\cdot M_{fs}\cdot \mathrm{tnic\_share}_{f,k,t} \;+\; \varepsilon,
+    \qquad c_{\text{tnic}} = 1.0
+  \]
+
+\end{frame}
+
+% ================================================
+% MODEL (cont'd)
+% ================================================
+
+\begin{frame}{Model: Posterior, Allocation, Benchmark}
+
+  \small\textit{$r$ = posterior draw, $R = 500$}
+
+  \vspace{0.4em}
 
   \textbf{Closed-form posterior} for segment $(f,s)$ in year $t$:
   \[
-    \pi_{fs,\cdot,t}\mid\text{data} \sim \mathrm{Dirichlet}\!\bigl(\alpha_{fs,\cdot}^{(0)} + w_{fs,\cdot,t}\bigr)
+    \pi_{fs,\cdot,t}\mid\text{data} \sim \mathrm{Dirichlet}\!\bigl(\alpha_{fs,\cdot,t}^{(0)} + w_{fs,\cdot,t}\bigr)
   \]
 
-  \textbf{Posterior draws} ($R=500$) are taken from this known distribution only to propagate uncertainty into HHI and CR4:
+  \textbf{Posterior draws} taken from this known distribution only to propagate uncertainty into HHI and CR4:
   \[
-    \pi_{fs,\cdot}^{(r)} \sim \mathrm{Dirichlet}\!\bigl(\alpha_{fs,\cdot}^{(0)} + w_{fs,\cdot,t}\bigr),
+    \pi_{fs,\cdot}^{(r)} \sim \mathrm{Dirichlet}\!\bigl(\alpha_{fs,\cdot,t}^{(0)} + w_{fs,\cdot,t}\bigr),
     \quad \pi_{fs,k}^{(r)} = \text{drawn share of }(f,s)\text{'s revenue in }k
   \]
 
@@ -380,9 +428,9 @@
   \input{../assets/tables/wrds/wrds_coverage_by_year.tex}
   }
   \vspace{0.3em}
-  %{\tiny\textit{Notes:} Firm counts = unique \texttt{gvkey}s in sales panel.
-  %S\&P~500 flag is current membership (\texttt{curr\_sp500\_flag=1}).
-  %Sales in millions USD. 2026 is partial (early filers only).}
+  {\tiny\textit{Notes:} Firm counts = unique \texttt{gvkey}s in sales panel.
+  S\&P~500 flag is current membership (\texttt{curr\_sp500\_flag=1}).
+  Sales in millions USD. 2026 is partial (early filers only).}
 
 \end{frame}
 

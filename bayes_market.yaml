@@ -1,0 +1,23 @@
+name: bayes_ml
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - scipy
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - jupyter
+  - jupyterlab
+  - networkx
+  - graphviz
+  - python-graphviz
+  - pip
+  - pip:
+    - pgmpy==1.0.0
+    - arviz
+    - causalgraphicalmodels
+    - pymc

@@ -1,4 +1,6 @@
 .DS_Store
+
+# LaTeX build artifacts
 *.aux
 *.log
 *.nav
@@ -8,3 +10,16 @@
 *.fdb_latexmk
 *.fls
 *.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.vrb
+*.lof
+*.lot
+*.idx
+*.ind
+*.ilg
+*.xdv
+*.dvi
+*.ps
