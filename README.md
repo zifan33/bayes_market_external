@@ -46,7 +46,7 @@ Rising U.S. concentration is well-documented:
 
 ## This Project
 
-> Treat firm-industry allocation as a **latent variable**, identify it from Compustat NAICS co-occurrence, and propagate posterior uncertainty into concentration measures.
+> Treat firm-industry allocation as a **latent variable**, identify it from Compustat NAICS co-occurrence and TNIC3 cosine similarities with competitors. Then, propagate posterior uncertainty into concentration measures.
 
 **Main findings:**
 
@@ -74,6 +74,16 @@ Rising U.S. concentration is well-documented:
 
 *Stable coverage 2019–2022 (~2,200 firms/yr). Partial-year attrition in 2024–2025.*
 
+**Source:** Hoberg-Phillips 10-K Text-based Network Industry Classifications (TNIC), 2017–2025
+
+| | TNIC Count Panel |
+|---|---|
+| **Observations** | 34,758 segment-industry-year rows |
+| **Unique NAICS codes** | 93 |
+| **Signal** | Product-description cosine similarity |
+
+Counts feed into the TNIC channel of the Dirichlet prior $\alpha^{(0)}$.
+
 <details>
 <summary>Coverage by Year</summary>
 
@@ -96,19 +106,27 @@ Rising U.S. concentration is well-documented:
 
 ---
 
-## Model: Bayesian Dirichlet Allocation
+## Model: Two-Channel Dirichlet Prior
 
-*Indices: f = firm, s = segment ∈ f, k = industry, t = year, r = draw*
+*Indices: f = firm, s = segment ∈ f, k = industry, t = year, j = TNIC peer, r = draw*
 
-**Step 1 — Prior:** Sales-weighted pseudo-counts summed over pre-period $\mathcal{T}_0 = 2017$–$2021$:
+**Channel A — WRDS sales-weighted counts** (summed over pre-period $\mathcal{T}_0 = 2017$–$2021$):
 
-$$\alpha_{fs,k}^{(0)} = \sum_{t\in\mathcal{T}_0} \underbrace{\frac{c_{fs,k,t}}{C_{k,t}} \cdot S_{k,t}}_{w_{fs,k,t}:\;\text{segment's share of industry }k\text{'s count} \times \text{industry sales}} + \;\varepsilon$$
+$$m_{fs,k}^{(0)} = \sum_{t\in\mathcal{T}_0} \underbrace{\frac{c_{fs,k,t}}{C_{k,t}} \cdot S_{k,t}}_{w_{fs,k,t}:\;\text{segment's share of industry }k\text{'s count} \times \text{industry sales}}$$
 
-**Step 2 — Closed-form posterior** for segment $(f,s)$ in year $t$:
+**Channel B — TNIC peer-weighted smoothing** (Hoberg–Phillips 10-K cosine similarity):
 
-$$\pi_{fs,\cdot,t}\mid\text{data} \sim \mathrm{Dirichlet}\!\bigl(\alpha_{fs,\cdot}^{(0)} + w_{fs,\cdot,t}\bigr)$$
+$$\mathrm{tnic\_share}_{f,k,t} = \frac{\sum_{j} \mathrm{sim}(f,j,t)\,\hat\pi^{\text{bench}}_{j,k,t}}{\sum_{j} \mathrm{sim}(f,j,t)} \qquad \text{(uniform } 1/K \text{ fallback if no peers)}$$
 
-**Step 3 — Posterior draws** ($R = 500$) propagate uncertainty into HHI and CR4:
+**Combined additive prior** with TNIC mass scaled to the segment's pre-COVID total $M_{fs} = \sum_k m_{fs,k}^{(0)}$:
+
+$$\alpha_{fs,k,t}^{(0)} = m_{fs,k}^{(0)} \;+\; c_{\text{tnic}}\cdot M_{fs}\cdot \mathrm{tnic\_share}_{f,k,t} \;+\; \varepsilon, \qquad c_{\text{tnic}} = 1.0$$
+
+**Closed-form posterior** for segment $(f,s)$ in year $t$:
+
+$$\pi_{fs,\cdot,t}\mid\text{data} \sim \mathrm{Dirichlet}\!\bigl(\alpha_{fs,\cdot,t}^{(0)} + w_{fs,\cdot,t}\bigr)$$
+
+**Posterior draws** ($R = 500$) propagate uncertainty into HHI and CR4:
 
 $$\tilde{r}_{f,k,t}^{(r)} = \sum_{s \in f} \pi_{fs,k}^{(r)} \cdot r_{fs,t} \;\Rightarrow\; \text{market shares} \to \text{HHI, CR4}$$
 
@@ -268,14 +286,17 @@ Electronics: near-agreement (allocation uncertainty is lower).
 
 ```
 assets/
-  figures/wrds/     ← WRDS analysis figures (HHI, CR4, posteriors)
-  figures/demo/     ← Amazon India demo figure
-  tables/wrds/      ← Coverage table (LaTeX source)
+  figures/wrds/               ← WRDS analysis figures (HHI, CR4, posteriors)
+  figures/priors_all_firms/   ← TNIC prior diagnostics (aggregate trend)
+  figures/demo/               ← Amazon India demo figure
+  tables/wrds/                ← Coverage table (LaTeX source)
 slides/
-  wrds_slides_submission.pdf   ← Full slide deck
-  wrds_slides_submission.tex   ← LaTeX / Beamer source
+  wrds_slides_submission.pdf  ← Full slide deck
+  wrds_slides_submission.tex  ← LaTeX / Beamer source
 code/
-  notebooks/05_wrds_analysis.ipynb
+  notebooks/03_priors_tnic.ipynb    ← TNIC prior construction
+  notebooks/tnic_complete.csv       ← Processed TNIC similarity data
+  notebooks/05_wrds_analysis.ipynb  ← Main WRDS analysis
   src/wrds/generate_summary_tables.py
   src/demo/bayes_brand.py
   src/demo/plot_cr4_posteriors.py
