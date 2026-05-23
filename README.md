@@ -191,7 +191,10 @@ Uncertainty in the posterior varies meaningfully across industries — reflectin
 <img src="assets/figures/wrds/aggregate_concentration_trends_log_year_weighted.png" width="82%">
 </div>
 
-> Log-change from 2022 baseline. The **lower bound** of the 2025 credible band is above zero in every post-2022 year.  
+<div align="center">
+<img src="output/figures/priors_all_firms/agg_year_weighted_trend.png" width="82%">
+</div>
+
 > **The trend is structural, not measurement noise.**
 
 ---
